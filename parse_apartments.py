@@ -462,7 +462,7 @@ def get_property_name(soup, fields):
     fields['name'] = ''
 
     # get the name of the property
-    obj = soup.find('a', class_='placardTitle')
+    obj = soup.find('h1', class_='propertyName')
     if obj is not None:
         name = obj.getText()
         name = prettify_text(name)
