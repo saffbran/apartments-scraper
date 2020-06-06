@@ -481,28 +481,20 @@ def get_property_address(soup, fields):
 
     address = ""
     
-    # Update: This has been updated to be in a div with a class name of 'location'
     # They changed how this works so I need to grab the script
-    # script = soup.findAll('script', type='text/javascript')[2].text
+    script = soup.findAll('script', type='text/javascript')[2].text
     
     # The address is everything in quotes after listingAddress
-    #address = find_addr(script, "listingAddress")
+    address = find_addr(script, "listingAddress")
 
     # City
-    # address += ", " + find_addr(script, "listingCity")
+    address += ", " + find_addr(script, "listingCity")
 
     # State
-    # address += ", " + find_addr(script, "listingState")
+    address += ", " + find_addr(script, "listingState")
 
     # Zip Code
-    #address += " " + find_addr(script, "listingZip")
-
-    obj = soup.find('div', class_='location')
-
-    if obj is not None:
-        address = obj.getText()
-        address = prettify_text(address)
-        fields['address'] = address
+    address += " " + find_addr(script, "listingZip")
 
     fields['address'] = address
 
