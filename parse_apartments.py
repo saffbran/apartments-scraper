@@ -33,17 +33,16 @@ def create_csv(search_urls, map_info, fname, pscores):
         writer = csv.writer(csv_file)
         # this is the header (make sure it matches with the fields in
         # write_parsed_to_csv)
-        header = ['Option Name', 'Contact', 'Address', 'Size',
-                  'Rent', 'Monthly Fees', 'One Time Fees',
-                  'Pet Policy', 'Distance', 'Duration',
-                  'Parking', 'Gym', 'Kitchen',
-                  'Amenities', 'Features', 'Living Space',
-                  'Lease Info', 'Services',
-                  'Property Info', 'Indoor Info', 'Outdoor Info',
-                  'Images', 'Description']
+        header = ['ApartmentName', 'Website', 'PhoneNumber', 'Address', 'Size',
+                  'Rent', 'MonthlyFees', 'OneTimeFees',
+                  'DogsAllowed', 'CatsAllowed',
+                  'Pet Policy', 'Parking', 'Gym', 'Kitchen',
+                  'Amenities', 'Features', 'LivingSpace',
+                  'LeaseInfo', 'Services',
+                  'PropertyInfo', 'IndoorInfo', 'OutdoorInfo']
         # add the score fields if necessary
         if pscores:
-            for i in xrange(len(header), 0, -1):
+            for i in range(len(header), 0, -1):
                 header.insert(i, 5)
             # flag that we're importing with scores
             header[1] = 'score'
@@ -96,22 +95,19 @@ def write_parsed_to_csv(page_url, map_info, writer, pscores):
         fields = parse_apartment_information(url, map_info)
 
         # make this wiki markup
-        fields['name'] = '[' + str(fields['name']) + '](' + url + ')'
-        fields['address'] = '[' + fields['address'] + '](' + fields['map'] + ')'
+        fields['name'] = str(fields['name'])
 
         # fill out the CSV file
-        row = [fields['name'], contact,
+        row = [fields['name'], url, contact,
                fields['address'], fields['size'],
-               rent, fields['monthFees'], fields['onceFees'],
-               fields['petPolicy'], fields['distance'], fields['duration'],
-               fields['parking'], fields['gym'], fields['kitchen'],
-               fields['amenities'], fields['features'], fields['space'],
+               rent, fields['monthFees'], fields['onceFees'], fields['dogsAllowed'], 
+               fields['catsAllowed'], fields['petPolicy'], fields['parking'], fields['gym'], 
+               fields['kitchen'], fields['amenities'], fields['features'], fields['space'],
                fields['lease'], fields['services'],
-               fields['info'], fields['indoor'], fields['outdoor'],
-               fields['img'], fields['description']]
+               fields['info'], fields['indoor'], fields['outdoor']]
         # add the score fields if necessary
         if pscores:
-            for i in xrange(len(row), 0, -1):
+            for i in range(len(row), 0, -1):
                 row.insert(i, '5')
             row.append('0')
         # write the row
@@ -161,10 +157,10 @@ def parse_apartment_information(url, map_info):
     get_fees(soup, fields)
 
     # get the images as a list
-    get_images(soup, fields)
+    #get_images(soup, fields)
 
     # get the description section
-    get_description(soup, fields)
+    #get_description(soup, fields)
 
     # only look in this section (other sections are for example for printing)
     soup = soup.find('section', class_='specGroup js-specGroup')
@@ -203,12 +199,12 @@ def parse_apartment_information(url, map_info):
     get_features_and_info(soup, fields)
 
     # get the link to open in maps
-    fields['map'] = 'https://www.google.com/maps/dir/' \
-                    + map_info['target_address'].replace(' ', '+') + '/' \
-                    + fields['address'].replace(' ', '+') + '/data=!4m2!4m1!3e2'
+    #fields['map'] = 'https://www.google.com/maps/dir/' \
+    #                + map_info['target_address'].replace(' ', '+') + '/' \
+    #                + fields['address'].replace(' ', '+') + '/data=!4m2!4m1!3e2'
 
-    fields['distance'] = ''
-    fields['duration'] = ''
+    #fields['distance'] = ''
+    #fields['duration'] = ''
     if map_info['use_google_maps']:
         # get the distance and duration to the target address using the Google API
         get_distance_duration(map_info, fields)
@@ -234,31 +230,31 @@ def prettify_text(data):
     return str(data).encode('utf-8')
 
 
-def get_images(soup, fields):
-    """Get the images of the apartment"""
+#def get_images(soup, fields):
+#    """Get the images of the apartment"""
 
-    fields['img'] = ''
+#    fields['img'] = ''
 
-    if soup is None: return
+#    if soup is None: return
 
-    # find ul with id fullCarouselCollection
-    soup = soup.find('ul', {'id': 'fullCarouselCollection'})
-    if soup is not None:
-        for img in soup.find_all('img'):
-            fields['img'] += '![' + img['alt'] + '](' + img['src'] + ') '
+#    # find ul with id fullCarouselCollection
+#    soup = soup.find('ul', {'id': 'fullCarouselCollection'})
+#    if soup is not None:
+#        for img in soup.find_all('img'):
+#            fields['img'] += '![' + img['alt'] + '](' + img['src'] + ') '
 
-def get_description(soup, fields):
-    """Get the description for the apartment"""
+#def get_description(soup, fields):
+#    """Get the description for the apartment"""
 
-    fields['description'] = ''
+#    fields['description'] = ''
 
-    if soup is None: return
+#    if soup is None: return
 
-    # find p with itemprop description
-    obj = soup.find('p', {'itemprop': 'description'})
+#    # find p with itemprop description
+#    obj = soup.find('p', {'itemprop': 'description'})
 
-    if obj is not None:
-        fields['description'] = prettify_text(obj.getText())
+#    if obj is not None:
+#        fields['description'] = prettify_text(obj.getText())
 
 def get_property_size(soup, fields):
     """Given a beautifulSoup parsed page, extract the property size of the first one bedroom"""
@@ -333,6 +329,8 @@ def get_pet_policy(soup, fields):
     """Given a beautifulSoup parsed page, extract the pet policy details"""
     if soup is None:
         fields['petPolicy'] = ''
+        fields['dogsAllowed'] = ''
+        fields['catsAllowed'] = ''
         return
     
     # the pet policy
@@ -342,6 +340,19 @@ def get_pet_policy(soup, fields):
     else:
         data = data.getText()
         data = prettify_text(data)
+
+    if 'Dogs and Cats Allowed' in str(data):
+        fields['dogsAllowed'] = True
+        fields['catsAllowed'] = True
+    elif 'Dogs Allowed' in str(data):
+        fields['dogsAllowed'] = True
+        fields['catsAllowed'] = False
+    elif 'Cats Allowed' in str(data):
+        fields['catsAllowed'] = True
+        fields['dogsAllowed'] = False
+    else:
+        fields['dogsAllowed'] = False
+        fields['catsAllowed'] = False
 
     # format it nicely: remove the trailing whitespace
     fields['petPolicy'] = data
@@ -357,28 +368,26 @@ def get_fees(soup, fields):
 
     obj = soup.find('div', class_='monthlyFees')
     if obj is not None:
-        for expense in obj.find_all('div', class_='fee'):
-            description = expense.find(
-                'div', class_='descriptionWrapper').getText()
+        for expense in obj.find_all('div', class_='descriptionWrapper'):
+            description = expense.find_all('span')[0].get_text()
             description = prettify_text(description)
 
-            price = expense.find('div', class_='priceWrapper').getText()
+            price = expense.find_all('span')[1].get_text()
             price = prettify_text(price)
 
-            fields['monthFees'] += '* ' + description + ': ' + price + '\n'
+            fields['monthFees'] += str(description) + ': ' + str(price) + '\n'
 
     # get one time fees
     obj = soup.find('div', class_='oneTimeFees')
     if obj is not None:
-        for expense in obj.find_all('div', class_='fee'):
-            description = expense.find(
-                'div', class_='descriptionWrapper').getText()
+        for expense in obj.find_all('div', class_='descriptionWrapper'):
+            description = expense.find_all('span')[0].get_text()
             description = prettify_text(description)
 
-            price = expense.find('div', class_='priceWrapper').getText()
+            price = expense.find_all('span')[1].get_text()
             price = prettify_text(price)
 
-            fields['onceFees'] += '* ' + description + ': ' + price + '\n'
+            fields['onceFees'] += str(description) + ': ' + str(price) + '\n'
 
     # remove ending \n
     fields['monthFees'] = fields['monthFees'].strip()
@@ -453,7 +462,7 @@ def get_property_name(soup, fields):
     fields['name'] = ''
 
     # get the name of the property
-    obj = soup.find('h1', class_='propertyName')
+    obj = soup.find('a', class_='placardTitle')
     if obj is not None:
         name = obj.getText()
         name = prettify_text(name)
@@ -471,21 +480,29 @@ def get_property_address(soup, fields):
     """Given a beautifulSoup parsed page, extract the full address of the property"""
 
     address = ""
-
+    
+    # Update: This has been updated to be in a div with a class name of 'location'
     # They changed how this works so I need to grab the script
-    script = soup.findAll('script', type='text/javascript')[2].text
+    # script = soup.findAll('script', type='text/javascript')[2].text
     
     # The address is everything in quotes after listingAddress
-    address = find_addr(script, "listingAddress")
+    #address = find_addr(script, "listingAddress")
 
     # City
-    address += ", " + find_addr(script, "listingCity")
+    # address += ", " + find_addr(script, "listingCity")
 
     # State
-    address += ", " + find_addr(script, "listingState")
+    # address += ", " + find_addr(script, "listingState")
 
     # Zip Code
-    address += " " + find_addr(script, "listingZip")
+    #address += " " + find_addr(script, "listingZip")
+
+    obj = soup.find('div', class_='location')
+
+    if obj is not None:
+        address = obj.getText()
+        address = prettify_text(address)
+        fields['address'] = address
 
     fields['address'] = address
 
